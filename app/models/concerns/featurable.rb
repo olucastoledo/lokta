@@ -42,6 +42,8 @@ module Featurable
   end
 
   def feature_enabled?(name)
+    return true if ChatwootApp.enterprise? && Featurable::FEATURE_LIST.find { |f| f['name'] == name.to_s }&.dig('premium')
+
     send("feature_#{name}?")
   end
 
@@ -62,6 +64,11 @@ module Featurable
   private
 
   def enable_default_features
+    if ChatwootApp.enterprise?
+      premium_features = Featurable::FEATURE_LIST.select { |f| f['premium'] }.map { |f| f['name'] }
+      enable_features(*premium_features)
+    end
+
     config = InstallationConfig.find_by(name: 'ACCOUNT_LEVEL_FEATURE_DEFAULTS')
     return true if config.blank?
 

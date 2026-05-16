@@ -44,7 +44,7 @@ module CaptainFeaturable
   def captain_features_with_defaults
     stored_features = captain_features || {}
     Llm::Models.feature_keys.index_with do |feature_key|
-      stored_features[feature_key] == true
+      ChatwootApp.enterprise? || stored_features[feature_key] == true
     end
   end
 
