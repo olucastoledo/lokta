@@ -499,6 +499,7 @@ Rails.application.routes.draw do
             end
           end
           resource :year_in_review, only: [:show]
+          resources :weekly_summaries, only: [:index]
           resources :live_reports, only: [] do
             collection do
               get :conversation_metrics
