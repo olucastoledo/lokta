@@ -204,6 +204,13 @@ watch([accountId, hasConversationUnreadCounts], fetchConversationUnreadCounts, {
   immediate: true,
 });
 
+// Contas autorizadas a visualizar o CRM Kanban na sidebar (ex: [2, 3])
+const KANBAN_ENABLED_ACCOUNTS = [2];
+
+const hasCrmKanban = computed(() => {
+  return KANBAN_ENABLED_ACCOUNTS.includes(Number(accountId.value));
+});
+
 const normalizeUnreadCount = count => {
   const unreadCount = Number(count);
   return Number.isFinite(unreadCount) && unreadCount > 0 ? unreadCount : 0;
@@ -381,13 +388,17 @@ const menuItems = computed(() => {
         },
       ],
     },
-    {
-      name: 'Kanban',
-      label: 'CRM Kanban',
-      icon: 'i-lucide-trello',
-      to: accountScopedRoute('kanban_view'),
-      activeOn: ['kanban_view'],
-    },
+    ...(hasCrmKanban.value
+      ? [
+          {
+            name: 'Kanban',
+            label: 'CRM Kanban',
+            icon: 'i-lucide-trello',
+            to: accountScopedRoute('kanban_view'),
+            activeOn: ['kanban_view'],
+          },
+        ]
+      : []),
     {
       name: 'Captain',
       icon: 'i-woot-captain',
