@@ -290,13 +290,6 @@ const menuItems = computed(() => {
       },
     },
     {
-      name: 'Kanban',
-      label: 'CRM Kanban',
-      icon: 'i-lucide-layout-kanban',
-      to: accountScopedRoute('kanban_view'),
-      activeOn: ['kanban_view'],
-    },
-    {
       name: 'Conversation',
       label: t('SIDEBAR.CONVERSATIONS'),
       icon: 'i-lucide-message-circle',
@@ -387,6 +380,13 @@ const menuItems = computed(() => {
           })),
         },
       ],
+    },
+    {
+      name: 'Kanban',
+      label: 'CRM Kanban',
+      icon: 'i-lucide-trello',
+      to: accountScopedRoute('kanban_view'),
+      activeOn: ['kanban_view'],
     },
     {
       name: 'Captain',
