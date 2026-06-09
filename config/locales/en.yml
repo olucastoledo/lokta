@@ -557,3 +557,10 @@ en:
       no_subscriptions_to_test: 'Select at least one subscription to test.'
       no_subscriptions_to_delete: 'Select at least one subscription to delete.'
       subscriptions_deleted: "Deleted %{count} subscription(s). The user's device(s) will re-register on next app launch."
+
+  administrate:
+    resources:
+      billing_subscriptions:
+        name: Subscriptions
+      billing_plans:
+        name: Plans

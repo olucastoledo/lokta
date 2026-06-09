@@ -715,6 +715,8 @@ Rails.application.routes.draw do
       end
       resources :platform_apps, only: [:index, :new, :create, :show, :edit, :update, :destroy]
       resources :platform_banners
+      resources :billing_subscriptions
+      resources :billing_plans
       resource :instance_status, only: [:show]
 
       resource :settings, only: [:show] do
