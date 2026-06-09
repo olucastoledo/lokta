@@ -132,22 +132,39 @@ class DailyReportService
   def extract_sales(active_convs)
     sales = []
     seen_contacts = Set.new
+    seen_conversations = Set.new
     total_sales_value = 0.0
 
     active_convs.each do |conv|
-      contact = conv.contact
-      next if contact.blank? || seen_contacts.include?(contact.id)
+      next if seen_conversations.include?(conv.id)
 
-      valor_venda = contact.custom_attributes['valor_venda']
+      seen_conversations.add(conv.id)
+
+      contact = conv.contact
+      next if contact.blank?
+
+      # Try to get from Conversation custom attributes first
+      valor_venda = conv.custom_attributes['valor_venda']
+      stage = conv.custom_attributes['etapa_kanban']
+
+      # Fallback to Contact custom attributes if not present on Conversation
+      if valor_venda.blank?
+        next if seen_contacts.include?(contact.id)
+
+        valor_venda = contact.custom_attributes['valor_venda']
+        stage = contact.custom_attributes['etapa_kanban']
+        seen_contacts.add(contact.id) if valor_venda.present?
+      end
+
       next unless valor_venda.present? && (valor_venda.to_f.positive? || valor_venda.to_s.strip.present?)
 
-      seen_contacts.add(contact.id)
+      stage ||= 'Aguardando...'
       latest_note = contact.notes.order(created_at: :desc).first&.content
 
       sales << {
         contact_name: contact.name,
         valor_venda: valor_venda,
-        stage: contact.custom_attributes['etapa_kanban'] || 'Aguardando...',
+        stage: stage,
         latest_note: latest_note,
         conversation_id: conv.display_id
       }
