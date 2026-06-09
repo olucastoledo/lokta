@@ -99,6 +99,10 @@ class Account < ApplicationRecord
   has_many :webhooks, dependent: :destroy_async
   has_many :whatsapp_channels, dependent: :destroy_async, class_name: '::Channel::Whatsapp'
   has_many :working_hours, dependent: :destroy_async
+  has_one :billing_subscription, class_name: 'Billing::Subscription', dependent: :destroy
+  has_many :billing_invoices, class_name: 'Billing::Invoice', dependent: :destroy
+  has_many :billing_events, class_name: 'Billing::Event', dependent: :destroy
+  has_one :billing_setting, class_name: 'Billing::AccountSetting', dependent: :destroy
 
   has_one_attached :contacts_export
 
@@ -159,6 +163,14 @@ class Account < ApplicationRecord
     # we need to extract the language code from the locale
     account_locale = locale&.split('_')&.first
     ISO_639.find(account_locale)&.english_name&.downcase || 'english'
+  end
+
+  def billing_blocked?
+    setting = billing_setting
+    return false if setting.present? && !setting.billing_enabled?
+
+    subscription = billing_subscription
+    subscription.present? && subscription.blocked?
   end
 
   def onboarding_step

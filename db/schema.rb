@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_09_131529) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -26,6 +26,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.datetime "updated_at", null: false
     t.index ["owner_type", "owner_id"], name: "index_access_tokens_on_owner_type_and_owner_id"
     t.index ["token"], name: "index_access_tokens_on_token", unique: true
+  end
+
+  create_table "account_billing_settings", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.boolean "billing_enabled", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_account_billing_settings_on_account_id", unique: true
   end
 
   create_table "account_saml_settings", force: :cascade do |t|
@@ -259,6 +267,78 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.datetime "updated_at", null: false
     t.boolean "active", default: true, null: false
     t.index ["account_id"], name: "index_automation_rules_on_account_id"
+  end
+
+  create_table "billing_events", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "event_type"
+    t.text "description"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_billing_events_on_account_id"
+  end
+
+  create_table "billing_invoice_files", force: :cascade do |t|
+    t.bigint "billing_invoice_id", null: false
+    t.string "filename"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["billing_invoice_id"], name: "index_billing_invoice_files_on_billing_invoice_id"
+  end
+
+  create_table "billing_invoices", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "stripe_invoice_id"
+    t.string "stripe_customer_id"
+    t.string "stripe_subscription_id"
+    t.decimal "amount", precision: 10, scale: 2
+    t.string "currency"
+    t.string "status"
+    t.string "invoice_url"
+    t.string "invoice_pdf"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_billing_invoices_on_account_id"
+    t.index ["stripe_invoice_id"], name: "index_billing_invoices_on_stripe_invoice_id"
+  end
+
+  create_table "billing_plans", force: :cascade do |t|
+    t.string "stripe_product_id"
+    t.string "stripe_price_id"
+    t.string "name"
+    t.decimal "amount", precision: 10, scale: 2
+    t.string "currency"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["stripe_price_id"], name: "index_billing_plans_on_stripe_price_id"
+    t.index ["stripe_product_id"], name: "index_billing_plans_on_stripe_product_id"
+  end
+
+  create_table "billing_subscriptions", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "stripe_customer_id"
+    t.string "stripe_subscription_id"
+    t.string "stripe_price_id"
+    t.string "stripe_product_id"
+    t.string "plan_name"
+    t.decimal "amount", precision: 10, scale: 2
+    t.string "currency"
+    t.string "status"
+    t.datetime "current_period_start"
+    t.datetime "current_period_end"
+    t.datetime "trial_end"
+    t.datetime "next_payment_at"
+    t.datetime "last_payment_at"
+    t.datetime "blocked_at"
+    t.datetime "cancellation_at"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_billing_subscriptions_on_account_id", unique: true
+    t.index ["status"], name: "index_billing_subscriptions_on_status"
+    t.index ["stripe_customer_id"], name: "index_billing_subscriptions_on_stripe_customer_id"
+    t.index ["stripe_subscription_id"], name: "index_billing_subscriptions_on_stripe_subscription_id"
   end
 
   create_table "calls", force: :cascade do |t|
@@ -1321,8 +1401,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.index ["inbox_id"], name: "index_working_hours_on_inbox_id"
   end
 
+  add_foreign_key "account_billing_settings", "accounts", on_delete: :cascade
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "billing_events", "accounts", on_delete: :cascade
+  add_foreign_key "billing_invoice_files", "billing_invoices", on_delete: :cascade
+  add_foreign_key "billing_invoices", "accounts", on_delete: :cascade
+  add_foreign_key "billing_subscriptions", "accounts", on_delete: :cascade
   add_foreign_key "inboxes", "portals"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").

@@ -37,7 +37,7 @@ const colorClass = computed(() => {
     <div class="font-medium tracking-wider">
       {{ title }}
     </div>
-    <div class="tabular-nums">{{ consumed }} / {{ totalCount }}</div>
+    <div class="tabular-nums">{{ `${consumed} / ${totalCount}` }}</div>
   </div>
   <div class="rounded-full overflow-hidden h-2 w-full bg-n-slate-4 mt-2">
     <div class="h-2" :class="colorClass" :style="{ width: `${percent}%` }" />
