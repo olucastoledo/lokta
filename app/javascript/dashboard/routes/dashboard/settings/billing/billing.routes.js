@@ -2,6 +2,7 @@ import { frontendURL } from '../../../../helper/URLHelper';
 import { INSTALLATION_TYPES } from 'dashboard/constants/installationTypes';
 import SettingsWrapper from '../SettingsWrapper.vue';
 import Index from './Index.vue';
+import AdminIndex from './AdminIndex.vue';
 
 export default {
   routes: [
@@ -9,7 +10,11 @@ export default {
       path: frontendURL('accounts/:accountId/settings/billing'),
       meta: {
         permissions: ['administrator'],
-        installationTypes: [INSTALLATION_TYPES.CLOUD],
+        installationTypes: [
+          INSTALLATION_TYPES.CLOUD,
+          INSTALLATION_TYPES.COMMUNITY,
+          INSTALLATION_TYPES.ENTERPRISE,
+        ],
       },
       component: SettingsWrapper,
       props: {
@@ -23,7 +28,43 @@ export default {
           name: 'billing_settings_index',
           component: Index,
           meta: {
-            installationTypes: [INSTALLATION_TYPES.CLOUD],
+            installationTypes: [
+              INSTALLATION_TYPES.CLOUD,
+              INSTALLATION_TYPES.COMMUNITY,
+              INSTALLATION_TYPES.ENTERPRISE,
+            ],
+            permissions: ['administrator'],
+          },
+        },
+      ],
+    },
+    {
+      path: frontendURL('accounts/:accountId/settings/billing-admin'),
+      meta: {
+        permissions: ['administrator'],
+        installationTypes: [
+          INSTALLATION_TYPES.CLOUD,
+          INSTALLATION_TYPES.COMMUNITY,
+          INSTALLATION_TYPES.ENTERPRISE,
+        ],
+      },
+      component: SettingsWrapper,
+      props: {
+        headerTitle: 'BILLING_SETTINGS.ADMIN_TITLE',
+        icon: 'credit-card-person',
+        showNewButton: false,
+      },
+      children: [
+        {
+          path: '',
+          name: 'billing_settings_admin',
+          component: AdminIndex,
+          meta: {
+            installationTypes: [
+              INSTALLATION_TYPES.CLOUD,
+              INSTALLATION_TYPES.COMMUNITY,
+              INSTALLATION_TYPES.ENTERPRISE,
+            ],
             permissions: ['administrator'],
           },
         },

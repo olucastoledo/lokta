@@ -44,6 +44,10 @@ const isTrialAccount = computed(() => {
 });
 
 const limitExceededMessage = computed(() => {
+  if (!isOnChatwootCloud.value && currentAccount.value?.billing_blocked) {
+    return 'Sua conta está bloqueada por inadimplência. Identificamos uma pendência financeira em sua assinatura. Por favor, acesse o painel de faturamento para regularizar.';
+  }
+
   const account = currentAccount.value;
   if (!account?.limits) return '';
 
@@ -84,9 +88,12 @@ const isLimitExceeded = computed(() => {
 });
 
 const shouldShowUpgradePage = computed(() => {
-  // Skip upgrade page in Billing, Inbox, and Agent pages
   if (props.bypassUpgradePage) return false;
-  if (!isOnChatwootCloud.value) return false;
+
+  if (!isOnChatwootCloud.value) {
+    return !!currentAccount.value?.billing_blocked;
+  }
+
   if (isTrialAccount.value) return false;
   return isLimitExceeded.value;
 });

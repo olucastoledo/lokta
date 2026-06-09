@@ -70,7 +70,15 @@ export default {
     showUpgradePage() {
       return this.upgradePageRef?.shouldShowUpgradePage;
     },
+    isOnChatwootCloud() {
+      return this.$store.getters['globalConfig/isOnChatwootCloud'];
+    },
     bypassUpgradePage() {
+      if (!this.isOnChatwootCloud) {
+        return ['billing_settings_index', 'billing_settings_admin'].includes(
+          this.$route.name
+        );
+      }
       return [
         'billing_settings_index',
         'settings_inbox_list',

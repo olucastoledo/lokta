@@ -406,9 +406,30 @@ Rails.application.routes.draw do
 
           resources :upload, only: [:create]
         end
+
+        scope module: 'billing' do
+          resource :billing, only: [:show], controller: 'billing' do
+            member do
+              post :checkout
+              post :portal
+            end
+          end
+        end
       end
       # end of account scoped api routes
       # ----------------------------------
+
+      namespace :billing do
+        post 'webhooks/stripe', to: 'webhooks#stripe'
+
+        namespace :admin, controller: 'admin_billing' do
+          get 'accounts', action: :index
+          get 'accounts/:id', action: :show
+          put 'accounts/:id', action: :update
+          post 'accounts/:id/sync', action: :sync
+          post 'invoices/:id/upload_file', action: :upload_file
+        end
+      end
 
       namespace :integrations do
         resources :webhooks, only: [:create]
