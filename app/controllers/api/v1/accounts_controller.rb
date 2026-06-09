@@ -69,6 +69,12 @@ class Api::V1::AccountsController < Api::BaseController
     head :ok
   end
 
+  def daily_report
+    date = params[:date].presence
+    service = DailyReportService.new(@account, date)
+    render json: service.generate_payload
+  end
+
   private
 
   def enqueue_branding_enrichment
