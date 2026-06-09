@@ -424,6 +424,9 @@ Rails.application.routes.draw do
           put :set_active_account
           post :resend_confirmation
           post :reset_access_token
+          get :terms_and_announcements
+          post :accept_terms
+          post :dismiss_announcement
         end
 
         # MFA routes

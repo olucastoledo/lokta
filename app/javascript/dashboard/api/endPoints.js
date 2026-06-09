@@ -55,6 +55,18 @@ const endPoints = {
   resetAccessToken: {
     url: '/api/v1/profile/reset_access_token',
   },
+
+  termsAndAnnouncements: {
+    url: '/api/v1/profile/terms_and_announcements',
+  },
+
+  acceptTerms: {
+    url: '/api/v1/profile/accept_terms',
+  },
+
+  dismissAnnouncement: {
+    url: '/api/v1/profile/dismiss_announcement',
+  },
 };
 
 export default page => {

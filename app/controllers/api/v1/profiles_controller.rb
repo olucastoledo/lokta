@@ -43,7 +43,75 @@ class Api::V1::ProfilesController < Api::BaseController
     @user.reload
   end
 
+  def terms_and_announcements
+    terms_content = ensure_config_exists('TERMS_OF_SERVICE_CONTENT', '<p>Adicione os seus Termos de Serviço no Painel de Admin.</p>')
+    terms_version = ensure_config_exists('TERMS_OF_SERVICE_VERSION', '1.0')
+
+    announcement_active = ensure_config_exists('CUSTOM_ANNOUNCEMENT_ACTIVE', 'false') == 'true'
+    announcement_content = ensure_config_exists('CUSTOM_ANNOUNCEMENT_CONTENT', '<p>Adicione o aviso/novidade no Painel de Admin.</p>')
+    announcement_btn_text = ensure_config_exists('CUSTOM_ANNOUNCEMENT_BUTTON_TEXT', 'Clique Aqui')
+    announcement_btn_link = ensure_config_exists('CUSTOM_ANNOUNCEMENT_BUTTON_LINK', 'https://')
+    announcement_version = ensure_config_exists('CUSTOM_ANNOUNCEMENT_VERSION', '1.0')
+
+    user_accepted_version = @user.custom_attributes['accepted_terms_version']
+    accepted = user_accepted_version == terms_version
+
+    user_dismissed_version = @user.custom_attributes['dismissed_announcement_version']
+    dismissed = user_dismissed_version == announcement_version
+
+    render json: {
+      terms_of_service: {
+        content: terms_content,
+        version: terms_version,
+        accepted: accepted
+      },
+      custom_announcement: {
+        active: announcement_active,
+        content: announcement_content,
+        button_text: announcement_btn_text,
+        button_link: announcement_btn_link,
+        version: announcement_version,
+        dismissed: dismissed
+      }
+    }
+  end
+
+  def accept_terms
+    terms_version = params[:terms_version].presence || ensure_config_exists('TERMS_OF_SERVICE_VERSION', '1.0')
+
+    @user.custom_attributes ||= {}
+    @user.custom_attributes['accepted_terms_version'] = terms_version.to_s
+    @user.custom_attributes['accepted_terms_at'] = Time.current
+    @user.save!
+
+    render json: { success: true }
+  end
+
+  def dismiss_announcement
+    announcement_version = params[:announcement_version].presence || ensure_config_exists('CUSTOM_ANNOUNCEMENT_VERSION', '1.0')
+
+    @user.custom_attributes ||= {}
+    @user.custom_attributes['dismissed_announcement_version'] = announcement_version.to_s
+    @user.custom_attributes['dismissed_announcement_at'] = Time.current
+    @user.save!
+
+    render json: { success: true }
+  end
+
   private
+
+  def ensure_config_exists(name, default_value)
+    config = InstallationConfig.find_by(name: name)
+    return config.value if config.present?
+
+    # Create it (locked: false so it's editable in the super admin panel)
+    new_config = InstallationConfig.create!(
+      name: name,
+      value: default_value,
+      locked: false
+    )
+    new_config.value
+  end
 
   def set_user
     @user = current_user

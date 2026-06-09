@@ -15,5 +15,13 @@
   "CHOICE_TOGGLE": {
     "YES": "Yes",
     "NO": "No"
+  },
+  "TERMS_AND_ANNOUNCEMENTS": {
+    "TOS_HEADER": "📄 Terms of Service",
+    "TOS_CHECKBOX": "I read, understand and accept the terms of service above.",
+    "TOS_ACCEPT": "Accept and Continue",
+    "ANNOUNCEMENT_HEADER": "📢 News & Announcements",
+    "ANNOUNCEMENT_CLOSE": "Close",
+    "SUBMITTING": "..."
   }
 }

@@ -53,6 +53,13 @@ export default {
     return {
       latestChatwootVersion: null,
       reconnectService: null,
+      showTermsModal: false,
+      showAnnouncementModal: false,
+      termsData: null,
+      announcementData: null,
+      hasCheckedTerms: false,
+      isSubmittingTerms: false,
+      isSubmittingAnnouncement: false,
     };
   },
   computed: {
@@ -126,6 +133,74 @@ export default {
           }
         })
       );
+
+      await this.checkTermsAndAnnouncements();
+    },
+    async checkTermsAndAnnouncements() {
+      try {
+        const { data } = await window.axios.get(
+          '/api/v1/profile/terms_and_announcements'
+        );
+        this.termsData = data.terms_of_service;
+        this.announcementData = data.custom_announcement;
+
+        if (
+          this.termsData &&
+          !this.termsData.accepted &&
+          this.termsData.content
+        ) {
+          this.showTermsModal = true;
+        } else if (
+          this.announcementData &&
+          this.announcementData.active &&
+          !this.announcementData.dismissed &&
+          this.announcementData.content
+        ) {
+          this.showAnnouncementModal = true;
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch terms/announcements', error);
+      }
+    },
+    async acceptTerms() {
+      if (!this.hasCheckedTerms || !this.termsData) return;
+      this.isSubmittingTerms = true;
+      try {
+        await window.axios.post('/api/v1/profile/accept_terms', {
+          terms_version: this.termsData.version,
+        });
+        this.showTermsModal = false;
+
+        if (
+          this.announcementData &&
+          this.announcementData.active &&
+          !this.announcementData.dismissed &&
+          this.announcementData.content
+        ) {
+          this.showAnnouncementModal = true;
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to accept terms', error);
+      } finally {
+        this.isSubmittingTerms = false;
+      }
+    },
+    async dismissAnnouncement() {
+      if (!this.announcementData) return;
+      this.isSubmittingAnnouncement = true;
+      try {
+        await window.axios.post('/api/v1/profile/dismiss_announcement', {
+          announcement_version: this.announcementData.version,
+        });
+        this.showAnnouncementModal = false;
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to dismiss announcement', error);
+      } finally {
+        this.isSubmittingAnnouncement = false;
+      }
     },
   },
 };
@@ -151,6 +226,118 @@ export default {
     </router-view>
     <WootSnackbarBox />
     <NetworkNotification />
+
+    <!-- Terms of Service Modal -->
+    <div
+      v-if="showTermsModal && termsData"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white dark:bg-slate-955 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full overflow-hidden transform transition-all duration-300 flex flex-col max-h-[80vh]"
+      >
+        <!-- Header -->
+        <div class="p-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <h3
+            class="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2"
+          >
+            {{ $t('TERMS_AND_ANNOUNCEMENTS.TOS_HEADER') }}
+          </h3>
+        </div>
+        <!-- Body -->
+        <div
+          class="p-6 overflow-y-auto text-sm text-slate-600 dark:text-slate-300 leading-relaxed flex-1"
+        >
+          <div
+            class="prose dark:prose-invert max-w-none"
+            v-html="termsData.content"
+          />
+        </div>
+        <!-- Footer -->
+        <div
+          class="p-6 pt-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col gap-4"
+        >
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input
+              v-model="hasCheckedTerms"
+              type="checkbox"
+              class="mt-1 h-4 w-4 rounded border-slate-300 text-woot-600 focus:ring-woot-500 cursor-pointer"
+            />
+            <span
+              class="text-xs text-slate-600 dark:text-slate-400 select-none"
+            >
+              {{ $t('TERMS_AND_ANNOUNCEMENTS.TOS_CHECKBOX') }}
+            </span>
+          </label>
+          <button
+            :disabled="!hasCheckedTerms || isSubmittingTerms"
+            class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-woot-600 hover:bg-woot-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-woot-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            @click="acceptTerms"
+          >
+            {{
+              isSubmittingTerms
+                ? $t('TERMS_AND_ANNOUNCEMENTS.SUBMITTING')
+                : $t('TERMS_AND_ANNOUNCEMENTS.TOS_ACCEPT')
+            }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Announcement Modal -->
+    <div
+      v-if="showAnnouncementModal && announcementData"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white dark:bg-slate-955 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full overflow-hidden transform transition-all duration-300 flex flex-col max-h-[80vh]"
+      >
+        <!-- Header -->
+        <div
+          class="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center"
+        >
+          <h3
+            class="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2"
+          >
+            {{ $t('TERMS_AND_ANNOUNCEMENTS.ANNOUNCEMENT_HEADER') }}
+          </h3>
+        </div>
+        <!-- Body -->
+        <div
+          class="p-6 overflow-y-auto text-sm text-slate-600 dark:text-slate-300 leading-relaxed flex-1"
+        >
+          <div
+            class="prose dark:prose-invert max-w-none"
+            v-html="announcementData.content"
+          />
+        </div>
+        <!-- Footer -->
+        <div
+          class="p-6 pt-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex gap-3 justify-end"
+        >
+          <button
+            :disabled="isSubmittingAnnouncement"
+            class="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200"
+            @click="dismissAnnouncement"
+          >
+            {{ $t('TERMS_AND_ANNOUNCEMENTS.ANNOUNCEMENT_CLOSE') }}
+          </button>
+          <a
+            v-if="
+              announcementData.button_text &&
+              announcementData.button_link &&
+              announcementData.button_link !== 'https://'
+            "
+            :href="announcementData.button_link"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-woot-600 hover:bg-woot-700 transition-all duration-200 flex items-center justify-center"
+            @click="dismissAnnouncement"
+          >
+            {{ announcementData.button_text }}
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
   <LoadingState v-else />
 </template>
