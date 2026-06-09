@@ -38,7 +38,14 @@ class DailyReportService
     # Build report sections
     report = []
     report << "📊 *Relatório Diário de Atendimentos - #{@account.name}*"
-    report << "📅 *Referente a:* #{format_date(@date)} (Ontem)"
+    suffix = if @date == yesterday_date
+               ' (Ontem)'
+             elsif @date == today_date
+               ' (Hoje)'
+             else
+               ''
+             end
+    report << "📅 *Referente a:* #{format_date(@date)}#{suffix}"
     report << ''
     report << build_general_summary_text(new_convs.count, resolved_convs.count, active_convs.count, open_convs_count)
     report << build_labels_text(general_labels) if general_labels.any?
@@ -145,8 +152,16 @@ class DailyReportService
   end
 
   def build_general_summary_text(new_count, resolved_count, active_count, open_count)
+    summary_word = if date_context_word == 'Ontem'
+                     'de Ontem'
+                   elsif date_context_word == 'Hoje'
+                     'de Hoje'
+                   else
+                     date_context_word
+                   end
+
     [
-      '📈 *Resumo Geral de Ontem:*',
+      "📈 *Resumo Geral #{summary_word}:*",
       "• Novas conversas criadas: #{new_count}",
       "• Conversas resolvidas: #{resolved_count}",
       "• Conversas ativas (com mensagens/atualizações): #{active_count}",
@@ -156,7 +171,7 @@ class DailyReportService
   end
 
   def build_labels_text(general_labels)
-    lines = ['🏷️ *Conversas por Etiqueta (Ontem):*']
+    lines = ["🏷️ *Conversas por Etiqueta (#{date_context_word}):*"]
     general_labels.sort_by { |_, v| -v }.each do |label, count|
       lines << "• #{label}: #{count}"
     end
@@ -165,7 +180,7 @@ class DailyReportService
   end
 
   def build_agents_text(agent_metrics)
-    lines = ['👥 *Desempenho dos Agentes (Ontem):*']
+    lines = ["👥 *Desempenho dos Agentes (#{date_context_word}):*"]
     agent_metrics.each do |metrics|
       lines << "*#{metrics[:name]}*"
       lines << "  • Conversas atendidas: #{metrics[:handled_conversations]}"
@@ -182,7 +197,7 @@ class DailyReportService
 
   def build_sales_text(sales, total_sales_value)
     lines = [
-      '💰 *Vendas Registradas (Ontem):*',
+      "💰 *Vendas Registradas (#{date_context_word}):*",
       "Total estimado: R$ #{format_currency(total_sales_value)}",
       ''
     ]
@@ -204,6 +219,21 @@ class DailyReportService
   def yesterday_date
     tz = ActiveSupport::TimeZone[timezone] || Time.zone
     tz.now.yesterday.strftime('%Y-%m-%d')
+  end
+
+  def today_date
+    tz = ActiveSupport::TimeZone[timezone] || Time.zone
+    tz.now.strftime('%Y-%m-%d')
+  end
+
+  def date_context_word
+    if @date == yesterday_date
+      'Ontem'
+    elsif @date == today_date
+      'Hoje'
+    else
+      "do dia #{format_date(@date)}"
+    end
   end
 
   def format_date(date_str)
