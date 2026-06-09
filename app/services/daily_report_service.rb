@@ -26,6 +26,12 @@ class DailyReportService
     active_convs = @account.conversations.where(updated_at: start_time..end_time)
     open_convs_count = @account.conversations.where(status: :open).count
 
+    # Channel Metrics
+    @new_by_inbox = new_convs.group(:inbox_id).count
+    @active_by_inbox = active_convs.group(:inbox_id).count
+    inbox_ids = (@new_by_inbox.keys + @active_by_inbox.keys).uniq
+    @inboxes = inbox_ids.any? ? @account.inboxes.where(id: inbox_ids).index_by(&:id) : {}
+
     # 2. General Labels
     general_labels = count_general_labels(active_convs)
 
@@ -48,6 +54,7 @@ class DailyReportService
     report << "📅 *Referente a:* #{format_date(@date)}#{suffix}"
     report << ''
     report << build_general_summary_text(new_convs.count, resolved_convs.count, active_convs.count, open_convs_count)
+    report << build_channels_text(@new_by_inbox, @active_by_inbox, @inboxes) if @inboxes.any?
     report << build_labels_text(general_labels) if general_labels.any?
     report << build_agents_text(agent_metrics) if agent_metrics.any?
     report << build_sales_text(sales, total_sales_value) if sales.any?
@@ -79,7 +86,8 @@ class DailyReportService
         total_new_conversations: new_convs_count,
         total_resolved_conversations: resolved_convs_count,
         total_active_conversations: active_convs_count,
-        total_open_conversations: open_convs_count
+        total_open_conversations: open_convs_count,
+        channels: inboxes_payload
       }
     }
   end
@@ -168,6 +176,31 @@ class DailyReportService
       "• Total de conversas em aberto (atual): #{open_count}",
       ''
     ].join("\n")
+  end
+
+  def build_channels_text(new_by_inbox, active_by_inbox, inboxes)
+    lines = ["🔌 *Conversas por Canal (#{date_context_word}):*"]
+    inboxes.each do |inbox_id, inbox|
+      new_count = new_by_inbox[inbox_id] || 0
+      active_count = active_by_inbox[inbox_id] || 0
+      lines << "• #{inbox.name}: #{new_count} novas, #{active_count} ativas"
+    end
+    lines << ''
+    lines.join("\n")
+  end
+
+  def inboxes_payload
+    return [] if @inboxes.blank?
+
+    @inboxes.map do |inbox_id, inbox|
+      {
+        inbox_id: inbox.id,
+        inbox_name: inbox.name,
+        channel_type: inbox.channel_type,
+        new_conversations: @new_by_inbox[inbox_id] || 0,
+        active_conversations: @active_by_inbox[inbox_id] || 0
+      }
+    end
   end
 
   def build_labels_text(general_labels)
