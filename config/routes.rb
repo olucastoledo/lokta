@@ -428,6 +428,7 @@ Rails.application.routes.draw do
           get :terms_and_announcements
           post :accept_terms
           post :dismiss_announcement
+          get :terms_acceptance_logs
         end
 
         # MFA routes

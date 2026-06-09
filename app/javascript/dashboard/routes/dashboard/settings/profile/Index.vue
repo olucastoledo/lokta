@@ -92,6 +92,12 @@ export default {
       ],
       notificationPermissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
       audioNotificationPermissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
+      termsHistory: {},
+      userTermsLogs: [],
+      allUsersTermsLogs: [],
+      selectedTermVersion: null,
+      selectedTermContent: '',
+      showTermModal: false,
     };
   },
   computed: {
@@ -107,6 +113,7 @@ export default {
   mounted() {
     if (this.currentUserId) {
       this.initializeUser();
+      this.fetchTermsLogs();
     }
   },
   methods: {
@@ -198,6 +205,39 @@ export default {
         useAlert(this.$t('PROFILE_SETTINGS.FORM.ACCESS_TOKEN.RESET_SUCCESS'));
       } else {
         useAlert(this.$t('PROFILE_SETTINGS.FORM.ACCESS_TOKEN.RESET_ERROR'));
+      }
+    },
+    async fetchTermsLogs() {
+      try {
+        const response = await window.axios.get(
+          '/api/v1/profile/terms_acceptance_logs'
+        );
+        this.termsHistory = response.data.history || {};
+        this.userTermsLogs = response.data.user_logs || [];
+        this.allUsersTermsLogs = response.data.all_users_logs || [];
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch terms logs', error);
+      }
+    },
+    viewTermContent(version) {
+      this.selectedTermVersion = version;
+      const historyItem = this.termsHistory[version];
+      this.selectedTermContent = historyItem ? historyItem.content : '';
+      this.showTermModal = true;
+    },
+    closeTermModal() {
+      this.showTermModal = false;
+      this.selectedTermVersion = null;
+      this.selectedTermContent = '';
+    },
+    formatDate(dateStr) {
+      if (!dateStr) return '';
+      try {
+        const date = new Date(dateStr);
+        return date.toLocaleString();
+      } catch (e) {
+        return dateStr;
       }
     },
   },
@@ -340,5 +380,162 @@ export default {
         @on-reset="resetAccessToken"
       />
     </SectionLayout>
+
+    <SectionLayout
+      with-border
+      :title="$t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TITLE')"
+      :description="$t('PROFILE_SETTINGS.FORM.TERMS_LOGS.NOTE')"
+    >
+      <div class="w-full flex flex-col gap-6">
+        <!-- Tabela do Usuário Logado -->
+        <div class="overflow-x-auto">
+          <table
+            class="min-w-full divide-y divide-slate-100 dark:divide-slate-800"
+          >
+            <thead>
+              <tr
+                class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
+              >
+                <th class="py-3 px-4">
+                  {{ $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TABLE.VERSION') }}
+                </th>
+                <th class="py-3 px-4">
+                  {{ $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TABLE.ACCEPTED_AT') }}
+                </th>
+                <th class="py-3 px-4" />
+              </tr>
+            </thead>
+            <tbody
+              class="divide-y divide-slate-100 dark:divide-slate-800 text-sm"
+            >
+              <tr v-for="log in userTermsLogs" :key="log.version">
+                <td class="py-3 px-4 font-medium">{{ log.version }}</td>
+                <td class="py-3 px-4 text-slate-600 dark:text-slate-400">
+                  {{ formatDate(log.accepted_at) }}
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <woot-button
+                    variant="link"
+                    size="small"
+                    @click="viewTermContent(log.version)"
+                  >
+                    {{
+                      $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TABLE.ACTION_VIEW')
+                    }}
+                  </woot-button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Seção do Administrador (Lista todos os usuários da conta) -->
+        <div
+          v-if="
+            currentUser.role === 'administrator' && allUsersTermsLogs.length
+          "
+          class="mt-4 border-t border-slate-100 dark:border-slate-800 pt-6"
+        >
+          <h4 class="text-base font-semibold mb-2">
+            {{ $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.ALL_USERS_TITLE') }}
+          </h4>
+          <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            {{ $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.ALL_USERS_NOTE') }}
+          </p>
+          <div class="overflow-x-auto">
+            <table
+              class="min-w-full divide-y divide-slate-100 dark:divide-slate-800"
+            >
+              <thead>
+                <tr
+                  class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                >
+                  <th class="py-3 px-4">
+                    {{ $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TABLE.USER_NAME') }}
+                  </th>
+                  <th class="py-3 px-4">
+                    {{
+                      $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TABLE.USER_EMAIL')
+                    }}
+                  </th>
+                  <th class="py-3 px-4">
+                    {{ $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TABLE.VERSION') }}
+                  </th>
+                  <th class="py-3 px-4">
+                    {{
+                      $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TABLE.ACCEPTED_AT')
+                    }}
+                  </th>
+                  <th class="py-3 px-4" />
+                </tr>
+              </thead>
+              <tbody
+                class="divide-y divide-slate-100 dark:divide-slate-800 text-sm"
+              >
+                <tr v-for="(log, idx) in allUsersTermsLogs" :key="idx">
+                  <td class="py-3 px-4 font-medium">{{ log.user_name }}</td>
+                  <td class="py-3 px-4 text-slate-600 dark:text-slate-400">
+                    {{ log.user_email }}
+                  </td>
+                  <td class="py-3 px-4">{{ log.version }}</td>
+                  <td class="py-3 px-4 text-slate-600 dark:text-slate-400">
+                    {{ formatDate(log.accepted_at) }}
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <woot-button
+                      variant="link"
+                      size="small"
+                      @click="viewTermContent(log.version)"
+                    >
+                      {{
+                        $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TABLE.ACTION_VIEW')
+                      }}
+                    </woot-button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </SectionLayout>
+  </div>
+
+  <!-- Modal para Visualizar o Texto dos Termos -->
+  <div
+    v-if="showTermModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900 bg-opacity-50"
+    @click.self="closeTermModal"
+  >
+    <div
+      class="relative w-full max-w-lg bg-white dark:bg-slate-950 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
+    >
+      <div
+        class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800"
+      >
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">
+          {{
+            $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TABLE.MODAL_TITLE', {
+              version: selectedTermVersion,
+            })
+          }}
+        </h3>
+        <woot-button variant="clear" size="small" @click="closeTermModal">
+          <fluent-icon icon="dismiss" :size="16" />
+        </woot-button>
+      </div>
+      <div
+        class="flex-1 overflow-y-auto px-6 py-4 prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300"
+      >
+        <div v-html="selectedTermContent" />
+      </div>
+      <div
+        class="flex justify-end px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50"
+      >
+        <woot-button variant="clear" @click="closeTermModal">
+          {{ $t('PROFILE_SETTINGS.FORM.TERMS_LOGS.TABLE.CLOSE') }}
+        </woot-button>
+      </div>
+    </div>
   </div>
 </template>

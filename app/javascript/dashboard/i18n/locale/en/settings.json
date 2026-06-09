@@ -225,6 +225,21 @@
         "LABEL": "Confirm new password",
         "ERROR": "Confirm password should match the password",
         "PLACEHOLDER": "Please re-enter your new password"
+      },
+      "TERMS_LOGS": {
+        "TITLE": "Terms of Service Acceptance History",
+        "ALL_USERS_TITLE": "Terms of Service Acceptance History (All Users)",
+        "NOTE": "View the history of the Terms of Service accepted by you.",
+        "ALL_USERS_NOTE": "As an administrator, you can view the terms accepted by all users of this account.",
+        "TABLE": {
+          "VERSION": "Version",
+          "ACCEPTED_AT": "Accepted At",
+          "USER_NAME": "User Name",
+          "USER_EMAIL": "Email",
+          "ACTION_VIEW": "View Content",
+          "MODAL_TITLE": "Terms of Service - Version {version}",
+          "CLOSE": "Close"
+        }
       }
     }
   },

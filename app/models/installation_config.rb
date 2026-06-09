@@ -43,6 +43,7 @@ class InstallationConfig < ApplicationRecord
   default_scope { order(created_at: :desc) }
   scope :editable, -> { where(locked: false) }
 
+  after_save :update_terms_history, if: -> { %w[TERMS_OF_SERVICE_CONTENT TERMS_OF_SERVICE_VERSION].include?(name) }
   after_commit :clear_cache
 
   def value
@@ -56,6 +57,42 @@ class InstallationConfig < ApplicationRecord
   end
 
   private
+
+  # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity
+  def update_terms_history
+    # Avoid infinite recursion when saving TERMS_OF_SERVICE_HISTORY
+    content_config = InstallationConfig.find_by(name: 'TERMS_OF_SERVICE_CONTENT')
+    version_config = InstallationConfig.find_by(name: 'TERMS_OF_SERVICE_VERSION')
+
+    return if content_config.blank? || version_config.blank?
+
+    version = version_config.value.to_s
+    content = content_config.value.to_s
+
+    # Find or initialize history config
+    history_config = InstallationConfig.find_or_initialize_by(name: 'TERMS_OF_SERVICE_HISTORY')
+    if history_config.new_record?
+      history_config.locked = true
+      history_config.value = {}.to_json
+    end
+
+    history = begin
+      JSON.parse(history_config.value.to_s)
+    rescue StandardError
+      {}
+    end
+    history = {} unless history.is_a?(Hash)
+
+    return unless history[version].nil? || history[version]['content'] != content
+
+    history[version] = {
+      'content' => content,
+      'updated_at' => Time.current.iso8601
+    }
+    history_config.value = history.to_json
+    history_config.save!
+  end
+  # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity
 
   def set_lock
     self.locked = true if locked.nil?
