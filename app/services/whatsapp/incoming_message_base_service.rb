@@ -162,6 +162,21 @@ class Whatsapp::IncomingMessageBaseService
     content_attrs = outgoing_echo ? { external_echo: true } : {}
     content_attrs[:in_reply_to_external_id] = @in_reply_to_external_id if @in_reply_to_external_id.present?
 
+    # Check for Meta referral (Click-to-WhatsApp Ads)
+    referral_data = message[:referral] || message['referral']
+    if referral_data.present?
+      content_attrs[:referral] = referral_data
+      begin
+        # Ensure the label exists in the account
+        @inbox.account.labels.find_or_create_by!(title: 'anuncio')
+        # Add the label to the conversation
+        @conversation.label_list.add('anuncio')
+        @conversation.save!
+      rescue StandardError => e
+        Rails.logger.error "[WhatsApp Referral] Failed to tag conversation: #{e.message}"
+      end
+    end
+
     @message = @conversation.messages.build(
       content: message_content(message),
       account_id: @inbox.account_id,
