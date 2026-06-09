@@ -550,3 +550,44 @@
   value: 'https://us.cloud.langfuse.com'
   locked: false
 ## ---- End of LLM Observability ---- ##
+
+## ------ Terms & Announcement Popups ------ ##
+- name: TERMS_OF_SERVICE_CONTENT
+  display_title: 'Terms of Service Content'
+  description: 'The HTML/Text content for the terms of service popup displayed to all users.'
+  value: '<p>Please accept our Terms of Service to continue using the platform.</p>'
+  locked: false
+  type: code
+- name: TERMS_OF_SERVICE_VERSION
+  display_title: 'Terms of Service Version'
+  description: 'Change the version (e.g., from 1.0 to 1.1) to force all users to accept the terms again.'
+  value: '1.0'
+  locked: false
+- name: CUSTOM_ANNOUNCEMENT_ACTIVE
+  display_title: 'Enable Announcement Popup'
+  description: 'Show a dismissible announcement popup to all users when they log in.'
+  value: false
+  locked: false
+  type: boolean
+- name: CUSTOM_ANNOUNCEMENT_CONTENT
+  display_title: 'Announcement Content'
+  description: 'The HTML/Text content for the announcement popup.'
+  value: '<p>Welcome to our new platform update!</p>'
+  locked: false
+  type: code
+- name: CUSTOM_ANNOUNCEMENT_BUTTON_TEXT
+  display_title: 'Announcement Button Text'
+  description: 'Text for the call-to-action button in the announcement (leave empty to hide button).'
+  value: 'Learn More'
+  locked: false
+- name: CUSTOM_ANNOUNCEMENT_BUTTON_LINK
+  display_title: 'Announcement Button Link'
+  description: 'URL for the call-to-action button in the announcement.'
+  value: 'https://'
+  locked: false
+- name: CUSTOM_ANNOUNCEMENT_VERSION
+  display_title: 'Announcement Version'
+  description: 'Change the version to force the announcement to show again for users who dismissed the previous version.'
+  value: '1.0'
+  locked: false
+## ------ End of Terms & Announcement Popups ------ ##

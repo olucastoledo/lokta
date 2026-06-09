@@ -37,6 +37,7 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
     @config = params[:config] || 'general'
   end
 
+  # rubocop:disable Metrics/MethodLength
   def allowed_configs
     mapping = {
       'facebook' => %w[FB_APP_ID FB_VERIFY_TOKEN FB_APP_SECRET IG_VERIFY_TOKEN FACEBOOK_API_VERSION ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT],
@@ -55,9 +56,14 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
 
     @allowed_configs = mapping.fetch(
       @config,
-      %w[ENABLE_ACCOUNT_SIGNUP FIREBASE_PROJECT_ID FIREBASE_CREDENTIALS WEBHOOK_TIMEOUT MAXIMUM_FILE_UPLOAD_SIZE WIDGET_TOKEN_EXPIRY]
+      %w[
+        ENABLE_ACCOUNT_SIGNUP FIREBASE_PROJECT_ID FIREBASE_CREDENTIALS WEBHOOK_TIMEOUT MAXIMUM_FILE_UPLOAD_SIZE WIDGET_TOKEN_EXPIRY
+        TERMS_OF_SERVICE_CONTENT TERMS_OF_SERVICE_VERSION CUSTOM_ANNOUNCEMENT_ACTIVE CUSTOM_ANNOUNCEMENT_CONTENT
+        CUSTOM_ANNOUNCEMENT_BUTTON_TEXT CUSTOM_ANNOUNCEMENT_BUTTON_LINK CUSTOM_ANNOUNCEMENT_VERSION
+      ]
     )
   end
+  # rubocop:enable Metrics/MethodLength
 
   def success_notice
     message = "#{@config.titleize} settings updated successfully"
